@@ -36,20 +36,19 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 //update route
 app.put("/listings/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const updatedListing = await Listing.findByIdAndUpdate(id, req.body, {
-      runValidators: true,
-      new: true,
-    });
-    if (!updatedListing) {
-      return res.status(404).send("Listing not found");
-    }
-    return res.redirect(`/listings/${updatedListing._id}`);
-  } catch (err) {
-    console.error("Error updating listing:", err);
-    return res.status(500).send("Error updating listing");
-  }
+  const { id } = req.params;
+  const { title, description, imageUrl, price, location, country } = req.body;
+  
+  await Listing.findByIdAndUpdate(id, {
+    title,
+    description,
+    image: { url: imageUrl },
+    price,
+    location,
+    country
+  });
+  
+  res.redirect(`/listings/${id}`);
 });
 //delete route
 app.delete("/listings/:id", async (req, res) => {

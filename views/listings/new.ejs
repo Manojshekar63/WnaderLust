@@ -1,34 +1,53 @@
 <% layout('layouts/boilerplate') %>
-<body>
+
 <h1>Create a New Listing</h1>
-<form method="post" action="/listings">
-  <div>
-    <label>Title</label><br />
-    <input type="text" name="title" required />
+
+<form method="post" action="/listings" class="row g-3">
+  <div class="col-md-6">
+    <label class="form-label">Title</label>
+    <input type="text" class="form-control" name="title" required />
   </div>
-  <div>
-    <label>Description</label><br />
-    <textarea name="description" rows="4"></textarea>
+  <div class="col-md-6">
+    <label class="form-label">Price</label>
+    <input type="number" class="form-control" name="price" step="0.01" />
   </div>
-  <div>
-    <label>Image URL</label><br />
-    <input type="text" name="imageUrl" placeholder="https://..." />
+  <div class="col-12">
+    <label class="form-label">Description</label>
+    <textarea class="form-control" name="description" rows="4"></textarea>
   </div>
-  <div>
-    <label>Price</label><br />
-    <input type="number" name="price" step="0.01" />
+  <div class="col-md-6">
+    <label class="form-label">Image URL</label>
+    <input type="text" class="form-control" name="imageUrl" placeholder="https://..." />
   </div>
-  <div>
-    <label>Location</label><br />
-    <input type="text" name="location" />
+  <div class="col-md-3">
+    <label class="form-label">Location</label>
+    <input type="text" class="form-control" name="location" />
   </div>
-  <div>
-    <label>Country</label><br />
-    <input type="text" name="country" />
+  <div class="col-md-3">
+    <label class="form-label">Country</label>
+    <input type="text" class="form-control" name="country" />
   </div>
-  <div style="margin-top:8px">
-    <button type="submit">Create</button>
-    <a href="/listings" style="margin-left:8px">Cancel</a>
+  <div class="col-12">
+    <button type="submit" class="btn btn-primary">Create</button>
+    <a href="/listings" class="btn btn-secondary ms-2">Cancel</a>
   </div>
 </form>
-</body>
+
+<hr />
+
+<form>
+  <div class="mb-3">
+    <label for="exampleInputEmail1" class="form-label">Email address</label>
+    <input type="email" class="form-control" id="exampleInputEmail1" name="email" aria-describedby="emailHelp">
+    <div id="emailHelp" class="form-text">We'll never share your email with anyone else.</div>
+  </div>
+  <div class="mb-3">
+    <label for="exampleInputPassword1" class="form-label">Password</label>
+    <input type="password" class="form-control" id="exampleInputPassword1" name="password">
+  </div>
+  <div class="mb-3 form-check">
+    <input type="checkbox" class="form-check-input" id="exampleCheck1" name="agree">
+    <label class="form-check-label" for="exampleCheck1">Check me out</label>
+  </div>
+  <button type="submit" class="btn btn-primary">Submit</button>
+</form>
