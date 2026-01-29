@@ -4,168 +4,119 @@ const mongoose = require("mongoose");
 const Listing = require("./models/listing.js");
 const path = require("path");
 const methodOverride = require("method-override");
+const wrapAsync = require("./utils/wrapsync.js");
+const ExpressError = require("./utils/expreererror.js");
+const { listingSchema } = require("./schema.js");
+const MONGO_URL = "mongodb://127.0.0.1:27017/wanderlust";
 
-// register ejs-mate BEFORE routes
-const engine = require('ejs-mate');
-app.engine('ejs', engine);
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
-
-// MongoDB connection URL
-const mongo_url = "mongodb://127.0.0.1:27017/wanderlust";
-
-// Connect to MongoDB
-async function main() {
-    // use mongoose to connect to the DB
-    await mongoose.connect(mongo_url);
-}
 main()
   .then(() => {
-    console.log("Connected to db");
+    console.log("connected to DB");
   })
-  .catch(err => {
-    console.error("DB connection error:", err);
+  .catch((err) => {
+    console.log(err);
   });
 
-app.use(methodOverride("_method"));
-
-// Middleware to parse JSON bodies (useful for POST requests)
-app.use(express.json());
-
-// add this so form submissions (application/x-www-form-urlencoded) are parsed
+async function main() {
+  await mongoose.connect(MONGO_URL);
+}
+const engine = require('ejs-mate');
+app.engine('ejs', engine);
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
 app.use(express.urlencoded({ extended: true }));
-//update route
-app.put("/listings/:id", async (req, res) => {
-  const { id } = req.params;
-  const { title, description, imageUrl, price, location, country } = req.body;
-  
-  await Listing.findByIdAndUpdate(id, {
-    title,
-    description,
-    image: { url: imageUrl },
-    price,
-    location,
-    country
-  });
-  
-  res.redirect(`/listings/${id}`);
-});
-//delete route
-app.delete("/listings/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const deletedListing = await Listing.findByIdAndDelete(id);
-    if (!deletedListing) {
-      return res.status(404).send("Listing not found");
+app.use(express.json());
+app.use(methodOverride("_method"));
+app.use(express.static(path.join(__dirname, "public")));
 
-    }
-    return res.redirect("/listings");
-  } catch (err) {
-    console.error("Error deleting listing:", err);
-    return res.status(500).send("Error deleting listing");
+//added
+
+
+
+app.get("/", (req, res) => {
+  res.send("Hi, I am root");
+});
+const validateListing = (req, res, next) => {
+  const { error } = listingSchema.validate(req.body);
+  if (error) {
+    throw new ExpressError(error.message, 400);
   }
-});
+  next();
+};
 
-//new route 
+//Index Route
+app.get("/listings", wrapAsync(async (req, res) => {
+  const allListings = await Listing.find({});
+  res.render("listings/index.ejs", { allListings });
+}));
+
+//New Route
 app.get("/listings/new", (req, res) => {
-  res.render("listings/new");
-
+  res.render("listings/new.ejs");
 });
-//edit route
+
+//Show Route
+app.get("/listings/:id", wrapAsync(async (req, res) => {
+  let { id } = req.params;
+  const listing = await Listing.findById(id);
+  res.render("listings/show.ejs", { listing });
+}));
+//Create Route
+app.post("/listings", validateListing, wrapAsync(async (req, res, next) => {
+  const newListing = new Listing(req.body.listing);
+  await newListing.save();
+  res.redirect("/listings");
+}));
+
+//Edit Route
 app.get("/listings/:id/edit", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const listing = await Listing.findById(id);
-    if (!listing) {
-      return res.status(404).send("Listing not found");
-    }
-    return res.render("listings/edit", { listing });
-  } catch (err) {
-    console.error("Error fetching listing for edit:", err);
-    return res.status(500).send("Error fetching listing for edit");
-  }
+  let { id } = req.params;
+  const listing = await Listing.findById(id);
+  res.render("listings/edit.ejs", { listing });
 });
 
-// Create route: map posted fields to the Listing schema
-app.post("/listings", async (req, res) => {
-  try {
-    const { title, description, imageUrl, price, location, country } = req.body;
-    // The Listing schema expects `image` as an object { filename, url }
-    const newListing = new Listing({
-      title,
-      description,
-      image: imageUrl ? { filename: "listingimage", url: imageUrl } : undefined,
-      price,
-      location,
-      country,
-    });
-    await newListing.save();
-    res.redirect("/listings");
-  } catch (err) {
-    console.error("Error creating listing:", err);
-    res.status(500).send("Error creating listing");
-  }
+//Update Route
+app.put("/listings/:id", validateListing, wrapAsync(async (req, res) => {
+  let { id } = req.params;
+  await Listing.findByIdAndUpdate(id, { ...req.body.listing });
+  res.redirect(`/listings/${id}`);
+}));
+
+//Delete Route
+app.delete("/listings/:id", wrapAsync(   async (req, res) => {
+  let { id } = req.params;
+  let deletedListing = await Listing.findByIdAndDelete(id);
+  console.log(deletedListing);
+  res.redirect("/listings");
+}));
+
+// app.all("*", (req, res, next) => {
+//   next(new ExpressError("Page Not Found", 404));
+// }
+// );
+app.use( (req, res, next) => {
+  next ( new ExpressError("Page Not Found" , 404));
 });
-
-// index Route - return all listings as JSON
-app.get("/listings", async (req, res) => {
-  try {
-    const alllistings = await Listing.find({});
-    // send listings to client
-    res.render("listings/index", { listings: alllistings, layout: 'layouts/boilerplate' });
-  } catch (err) {
-    console.error("Error fetching listings:", err);
-    return res.status(500).json({ error: "Failed to fetch listings" });
-  }
+app.use((err, req, res, next) => {
+  const statusCode = err.statusCode || err.status || 500;
+  const message = err.message || "Something went wrong";
+  res.status(statusCode).render("error.ejs", { err: { status: statusCode, message } });
 });
+// app.get("/testListing", async (req, res) => {
+//   let sampleListing = new Listing({
+//     title: "My New Villa",
+//     description: "By the beach",
+//     price: 1200,
+//     location: "Calangute, Goa",
+//     country: "India",
+//   });
 
-// show route
-app.get("/listings/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const listing = await Listing.findById(id);
-    if (!listing) {
-      return res.status(404).send("Listing not found");
-    }
-    res.render("listings/show", { listing, layout: 'layouts/boilerplate' });
-  } catch (err) {
-    console.error("Error fetching listing by ID:", err);
-    return res.status(500).json({ error: "Failed to fetch listing" });
-  }
-});
-
-/*
-  Route: GET /testlisting
-  Creates a sample Listing document and saves it to MongoDB.
-*/
-// app.get("/testlisting", async (req, res) => {
-//   try {
-//     const newListing = new Listing({
-//       title: "Cozy Cottage",
-//       description: "A cozy cottage in the countryside",
-//       image: "",
-//       price: 120,
-//       location: "Countryside",
-//       country: "USA", // <-- fixed field name to match schema
-//     });
-
-//     // Save the document to the database
-//     await newListing.save();
-
-//     res.send("Listing saved successfully");
-//   } catch (err) {
-//     console.error("Error saving listing:", err);
-//     res.status(500).send("Error saving listing");
-//   }
+//   await sampleListing.save();
+//   console.log("sample was saved");
+//   res.send("successful testing");
 // });
 
-// Simple root route
-app.get("/", (req, res) => {
-  res.send("hi, i am manoj");
-});
 
-// Start server
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
-  console.log(`server is listening on port ${PORT}`);
+app.listen(8080, () => {
+  console.log("server is listening to port 8080");
 });
