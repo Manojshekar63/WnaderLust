@@ -2,6 +2,7 @@
   <body>
     <h3>Listing Details :</h3>
     <ul>
+      <li>Owner: <%= listing.owner.username %></li>
       <li><%= listing.title %></li>
       <li><%= listing.description %></li>
       <li><img src="<%= listing.image %>" alt="Listing Image" /></li>
@@ -9,14 +10,21 @@
       <li><%= listing.location %></li>
       <li><%= listing.country %></li>
     </ul>
+    
     <br />
-    <a href="/listings/<%= listing._id %>/edit">Edit this Listing</a>
+    <% if (currUser && listing.owner._id.equals(currUser._id)) { %>
+    <div class="btns">
+    <a href="/listings/<%= listing._id %>/edit" 
+      class="btn btn-dark edit-btn">Edit this Listing</a>
     <br /><br />
     <form method="POST" action="/listings/<%=listing._id%>?_method=DELETE">
       <button class="btn btn-outline-dark">Delete this listing</button>
     </form>
+    </div>
+    <% } %>
 
     <div>
+     <% if (currUser) { %>
       <hr />
       <h4>Leave a Review   </h4>
       <form action="/listings/<%= listing._id %>/reviews" method="POST"  class="needs-validation">
@@ -35,6 +43,7 @@
       </form>
 
     </div>
+    <% } %>
 
     <hr />
     <h4>Reviews:</h4>

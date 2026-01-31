@@ -57,13 +57,13 @@ passport.use(new localStrategy(user.authenticate()));
 passport.serializeUser(user.serializeUser());
 passport.deserializeUser(user.deserializeUser());
 
+// Add this middleware to make currUser available in all templates
 app.use((req, res, next) => {
   res.locals.success = req.flash("success");
   res.locals.error = req.flash("error");
-
+  res.locals.currUser = req.user;  // Add this line
   next();
-}
-);
+});
 
 app.get("/", (req, res) => {
   res.send("Hi, I am root");
