@@ -69,12 +69,7 @@ app.get("/", (req, res) => {
   res.send("Hi, I am root");
 });
 
-// app.get("/demouser" ,async (req,res)=>{
-//   let fakeuser =new user({email:"delta" ,username:"johnDoe",});
-//   let newuser= await user.register(fakeuser ,"chicken");
-//   res.send(newuser);
-// }
-// );
+
     
 
 
