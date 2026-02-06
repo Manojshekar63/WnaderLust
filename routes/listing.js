@@ -8,6 +8,10 @@ const {isLoggedIn}=require("../middleware.js");
 const {isOwner}=require("../middleware.js");
 const {validateListing}=require("../middleware.js");
 const listingcontroller=require("../controllers/listings.js");
+const multer  = require('multer');
+
+const {storage}=require("../cloudConfig.js");
+const upload = multer({storage });
 
   //Index Route
   router.get("/", wrapAsync(listingcontroller.index));
@@ -20,11 +24,15 @@ router.get("/new",
 
 //Show Route
 router.get("/:id", wrapAsync(listingcontroller.showListing  ));
-//Create Route
+
+
+// Create Route
 router.post("/",
-  isLoggedIn, 
+  isLoggedIn, upload  .single('listing[image]'),
   validateListing,
    wrapAsync( listingcontroller.createListing ));
+
+
 
 //Edit Route
     router.get("/:id/edit",
@@ -37,6 +45,7 @@ router.post("/",
 router.put("/:id",
    isLoggedIn,
    isOwner, 
+   upload.single('listing[image]'),
    validateListing,
     wrapAsync(listingcontroller.updateListing ));
 

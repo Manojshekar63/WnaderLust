@@ -1,4 +1,7 @@
 const Listings= require("../models/listing.js");
+const mbxGeoding= require('@mapbox/mapbox-sdk/services/geocoding');
+const mapBoxToken= process.env.map_token;
+const geocodingClient = mbxGeoding({ accessToken: mapBoxToken });
 
 module.exports.index= async (req, res) => {
   const allListings = await Listings.find({});
@@ -28,8 +31,19 @@ module.exports.showListing= async (req, res) => {
 };
 
 module.exports.createListing= async (req, res, next) => {
+  let response=await geocodingClient
+  .forwardGeocode({
+  query: req.body.listing.location,
+  limit:  1,
+})
+  .send();
+  let url=req.file.path;
+  let filename=req.file.filename;
+
   const newListing = new Listings(req.body.listing);
   newListing.owner = req.user._id;
+  newListing.image = { url, filename };
+  newListing.geometry=response.body.features[0].geometry;
   await newListing.save();
   req.flash("success", "Successfully made a new listing!");
   res.redirect("/listings");
@@ -47,7 +61,13 @@ module.exports.renderEditForm= async (req, res) => {
 
 module.exports.updateListing= async (req, res) => {
   let { id } = req.params;
-  await Listings.findByIdAndUpdate(id, { ...req.body.listing });
+  let listings=await Listings.findByIdAndUpdate(id, { ...req.body.listing });
+   if(typeof req.file !== 'undefined') {
+  let url=req.file.path;
+  let filename=req.file.filename;
+  listings.image={ url, filename };
+  await listings.save();
+  }
   req.flash("success", "Successfully updated listing!");
   res.redirect(`/listings/${id}`);
 };

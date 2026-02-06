@@ -17,3 +17,16 @@
     }, false)
   })
 })()
+
+if (document.getElementById('map')) {
+  mapboxgl.accessToken = document.querySelector('meta[name="map-token"]').content;
+  const map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/streets-v12',
+    center: [78.0421, 27.1751],
+    zoom: 9
+  });
+  new mapboxgl.Marker()
+    .setLngLat([78.0421, 27.1751])
+    .addTo(map);
+}
